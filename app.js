@@ -19,10 +19,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api', apiRouter);
 
-//redirecciona url desconocidas al home
-app.use(function (req, res, next) {
-    res.redirect('/');
-});
+// //redirecciona url desconocidas al home
+// app.use(function (req, res, next) {
+//     res.redirect('/');
+// });
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

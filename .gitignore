@@ -3,8 +3,6 @@
 # dependencies
 /node_modules
 
-/public
-
 yarn.lock
 
 # IDEs and editors

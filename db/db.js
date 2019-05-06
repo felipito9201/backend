@@ -17,10 +17,8 @@ module.exports.listConsultores = () => {
 //devuelve los datos del informe
 module.exports.getInforme = async (usuarios, inicio, fin) => {
     const sql = 'SELECT ' +
-        'CONCAT( YEAR ( f.data_emissao ), "-", LPAD( MONTH ( f.data_emissao ), 2, "0" ) ) AS fecha, ' +
         'IFNULL( SUM( f.valor - f.valor * ( f.total_imp_inc / 100 ) ), 0 ) AS ganacia, ' +
-        'IFNULL( SUM( ( f.valor - f.valor * ( f.total_imp_inc / 100 ) ) * ( f.comissao_cn / 100 ) ), 0 ) AS comision, ' +
-        'IFNULL( s.brut_salario, 0 ) AS costo ' +
+        'IFNULL( SUM( ( f.valor - f.valor * ( f.total_imp_inc / 100 ) ) * ( f.comissao_cn / 100 ) ), 0 ) AS comision ' +
         'FROM ' +
         'cao_fatura f ' +
         'INNER JOIN cao_os o ON f.co_os = o.co_os ' +
@@ -29,6 +27,12 @@ module.exports.getInforme = async (usuarios, inicio, fin) => {
         'WHERE ' +
         'u.co_usuario = ? ' +
         'AND f.data_emissao >= ? AND f.data_emissao < ?';
+
+    const sqlCosto = 'SELECT ' +
+        's.brut_salario AS costo ' +
+        'FROM ' +
+        'cao_salario s ' +
+        'WHERE s.co_usuario = ?';
 
     let result = [];
 
@@ -39,18 +43,29 @@ module.exports.getInforme = async (usuarios, inicio, fin) => {
     for (const usuario of usuarios) {
 
         let informes = [];
+        let costo = 0;
+
+        const rowsCosto = await sequelize.query(sqlCosto, {
+            replacements: [usuario],
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        if (rowsCosto.length === 1){
+            costo = rowsCosto[0].costo;
+        }
 
         // se busca el informe para cada rango de fecha
         for (const rango of rangos) {
+            const fecha = rango.inicio.getFullYear() + '-' + (rango.inicio.getMonth() + 1).padStart(2,'0');
             const rows = await sequelize.query(sql, {
                 replacements: [usuario, rango.inicio, rango.fin],
                 type: sequelize.QueryTypes.SELECT
             });
 
             // se comprueba si el resultado es valido
-            if (rows !== null && rows[0].fecha !== null) {
+            if (rows !== null) {
                 // se guarda el resultado
-                informes.push(rows[0])
+                informes.push({fecha: fecha, ganacia: rows[0].ganacia, comision: rows[0].comision, costo: costo});
             }
         }
 
@@ -68,7 +83,6 @@ module.exports.getInforme = async (usuarios, inicio, fin) => {
 //devuelve los datos del grafico
 module.exports.getGraficoData = async (usuarios, inicio, fin) => {
     const sqlGanancia = 'SELECT ' +
-        'u.no_usuario AS nombre, ' +
         'IFNULL( SUM( f.valor - f.valor * ( f.total_imp_inc / 100 )), 0 ) AS ganancia ' +
         'FROM ' +
         'cao_fatura f ' +
@@ -103,7 +117,12 @@ module.exports.getGraficoData = async (usuarios, inicio, fin) => {
             type: sequelize.QueryTypes.SELECT
         });
         if (rows != null) {
-            result.ganancias.push(rows[0]);
+            const name = await sequelize.query('SELECT no_usuario as nombre FROM cao_usuario WHERE co_usuario = ?', {
+                replacements: [usuario],
+                type: sequelize.QueryTypes.SELECT
+            });
+
+            result.ganancias.push({nombre: name[0].nombre, ganancia: rows[0].ganancia});
         }
     }
 
@@ -113,7 +132,6 @@ module.exports.getGraficoData = async (usuarios, inicio, fin) => {
 //devuelve los datos de pizza
 module.exports.getPizzaData = async (usuarios, inicio, fin) => {
     const sqlGanancia = 'SELECT ' +
-        'u.no_usuario AS nombre, ' +
         'IFNULL( SUM( f.valor - f.valor * ( f.total_imp_inc / 100 )), 0 ) AS ganancia ' +
         'FROM ' +
         'cao_fatura f ' +
@@ -147,8 +165,13 @@ module.exports.getPizzaData = async (usuarios, inicio, fin) => {
             type: sequelize.QueryTypes.SELECT
         });
         if (rows != null) {
+            const name = await sequelize.query('SELECT no_usuario as nombre FROM cao_usuario WHERE co_usuario = ?', {
+                replacements: [usuario],
+                type: sequelize.QueryTypes.SELECT
+            });
+
             const porciento = (rows[0].ganancia * 100) / total[0].total;
-            result.push({nombre: rows[0].nombre, porciento: porciento});
+            result.push({nombre: name[0].nombre, porciento: porciento});
         }
     }
 
@@ -172,7 +195,7 @@ function getRangos(inicio, fin) {
             temp = new Date(inicio.getFullYear(), inicio.getMonth() + 1, 1);
         }
 
-        result.push({inicio, fin:temp});
+        result.push({inicio, fin: temp});
 
         inicio = temp;
     }

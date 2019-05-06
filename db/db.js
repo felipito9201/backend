@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize');
 
-const sequelize = new Sequelize('d1tkSmwZ98', 'd1tkSmwZ98', 'aGaG3L6vjd', {
-    host: 'remotemysql.com',
+const sequelize = new Sequelize('caol', 'root', 'root', {
+    host: 'localhost',
     dialect: 'mysql'
 });
 
@@ -56,7 +56,7 @@ module.exports.getInforme = async (usuarios, inicio, fin) => {
 
         // se busca el informe para cada rango de fecha
         for (const rango of rangos) {
-            const fecha = rango.inicio.getFullYear() + '-' + (rango.inicio.getMonth() + 1).padStart(2,'0');
+            const fecha = rango.inicio.getFullYear() + '-' + String(rango.inicio.getMonth() + 1).padStart(2,'0');
             const rows = await sequelize.query(sql, {
                 replacements: [usuario, rango.inicio, rango.fin],
                 type: sequelize.QueryTypes.SELECT
@@ -112,18 +112,22 @@ module.exports.getGraficoData = async (usuarios, inicio, fin) => {
 
     //se obtienen las ganancias para cada usuario
     for (const usuario of usuarios) {
+        let ganancia = 0;
         const rows = await sequelize.query(sqlGanancia, {
             replacements: [usuario, inicio, fin],
             type: sequelize.QueryTypes.SELECT
         });
-        if (rows != null) {
-            const name = await sequelize.query('SELECT no_usuario as nombre FROM cao_usuario WHERE co_usuario = ?', {
-                replacements: [usuario],
-                type: sequelize.QueryTypes.SELECT
-            });
 
-            result.ganancias.push({nombre: name[0].nombre, ganancia: rows[0].ganancia});
+        const name = await sequelize.query('SELECT no_usuario as nombre FROM cao_usuario WHERE co_usuario = ?', {
+            replacements: [usuario],
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        if (rows.length === 1) {
+            ganancia = rows[0].ganancia;
         }
+
+        result.ganancias.push({nombre: name[0].nombre, ganancia: ganancia});
     }
 
     return result;

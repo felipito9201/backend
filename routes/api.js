@@ -21,10 +21,11 @@ router.post('/informe', async function (req, res, next) {
 
     let result = [];
 
-    const inicioDate = new Date(inicio + '-1');
-    let temp = new Date(fin + '-1');
-    let mesSiguiente = new Date(temp.setMonth(temp.getMonth() + 1));
-    const finDate = new Date(mesSiguiente.setDate(mesSiguiente.getDate() - 1));
+    let inicioDate = new Date(inicio + '-01');
+    let finDate = new Date(fin + '-01');
+
+    inicioDate = new Date(inicioDate.getFullYear(), inicioDate.getMonth() + 1,1);
+    finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1,1);
 
     try {
         result = await db.getInforme(usuarios, inicioDate, finDate);
@@ -42,10 +43,11 @@ router.post('/grafico', async function (req, res, next) {
 
     let result = [];
 
-    const inicioDate = new Date(inicio + '-1');
-    let temp = new Date(fin + '-1');
-    let mesSiguiente = new Date(temp.setMonth(temp.getMonth() + 1));
-    const finDate = new Date(mesSiguiente.setDate(mesSiguiente.getDate() - 1));
+    let inicioDate = new Date(inicio + '-01');
+    let finDate = new Date(fin + '-01');
+
+    inicioDate = new Date(inicioDate.getFullYear(), inicioDate.getMonth() + 1,1)
+    finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1,1)
 
     try {
         result = await db.getGraficoData(usuarios, inicioDate, finDate);
@@ -63,10 +65,11 @@ router.post('/pizza', async function (req, res, next) {
 
     let result = [];
 
-    const inicioDate = new Date(inicio + '-1');
-    let temp = new Date(fin + '-1');
-    let mesSiguiente = new Date(temp.setMonth(temp.getMonth() + 1));
-    const finDate = new Date(mesSiguiente.setDate(mesSiguiente.getDate() - 1));
+    let inicioDate = new Date(inicio + '-01');
+    let finDate = new Date(fin + '-01');
+
+    inicioDate = new Date(inicioDate.getFullYear(), inicioDate.getMonth() + 1,1)
+    finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1,1)
 
     try {
         result = await db.getPizzaData(usuarios, inicioDate, finDate);
@@ -76,5 +79,7 @@ router.post('/pizza', async function (req, res, next) {
         res.json(e);
     }
 });
+
+
 
 module.exports = router;

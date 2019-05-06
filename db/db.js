@@ -28,28 +28,38 @@ module.exports.getInforme = async (usuarios, inicio, fin) => {
         'INNER JOIN cao_usuario u ON o.co_usuario = u.co_usuario ' +
         'WHERE ' +
         'u.co_usuario = ? ' +
-        'AND f.data_emissao BETWEEN ? AND ? ' +
-        'GROUP BY ' +
-        'CONCAT( YEAR ( f.data_emissao ), "-", LPAD( MONTH ( f.data_emissao ), 2, "0" ) ) ' +
-        'ORDER BY ' +
-        'CONCAT( YEAR ( f.data_emissao ), "-", LPAD( MONTH ( f.data_emissao ), 2, "0" ) )';
+        'AND f.data_emissao >= ? AND f.data_emissao < ?';
 
     let result = [];
 
+    // se obtienen los rangos de las fechas
+    const rangos = getRangos(inicio, fin);
+
     //recorre el arreglo de usuarios para obtener sus datos
     for (const usuario of usuarios) {
-        const rows = await sequelize.query(sql, {
-            replacements: [usuario, inicio, fin],
-            type: sequelize.QueryTypes.SELECT
-        });
-        if (rows != null) {
-            //obtiene el nombre
-            const name = await sequelize.query('SELECT no_usuario as nombre FROM cao_usuario WHERE co_usuario = ?', {
-                replacements: [usuario],
+
+        let informes = [];
+
+        // se busca el informe para cada rango de fecha
+        for (const rango of rangos) {
+            const rows = await sequelize.query(sql, {
+                replacements: [usuario, rango.inicio, rango.fin],
                 type: sequelize.QueryTypes.SELECT
             });
-            result.push({nombre: name[0].nombre, informes: rows});
+
+            // se comprueba si el resultado es valido
+            if (rows !== null && rows[0].fecha !== null) {
+                // se guarda el resultado
+                informes.push(rows[0])
+            }
         }
+
+        //obtiene el nombre
+        const name = await sequelize.query('SELECT no_usuario as nombre FROM cao_usuario WHERE co_usuario = ?', {
+            replacements: [usuario],
+            type: sequelize.QueryTypes.SELECT
+        });
+        result.push({nombre: name[0].nombre, informes: informes});
     }
 
     return result;
@@ -66,7 +76,7 @@ module.exports.getGraficoData = async (usuarios, inicio, fin) => {
         'INNER JOIN cao_usuario u ON o.co_usuario = u.co_usuario ' +
         'WHERE ' +
         'u.co_usuario = ? ' +
-        'AND f.data_emissao BETWEEN ? AND ?';
+        'AND f.data_emissao >= ? AND f.data_emissao < ?';
 
     const sqlPromedio = 'SELECT ' +
         'IFNULL( SUM( s.brut_salario ) / COUNT( * ), 0 ) AS promedio ' +
@@ -111,7 +121,7 @@ module.exports.getPizzaData = async (usuarios, inicio, fin) => {
         'INNER JOIN cao_usuario u ON o.co_usuario = u.co_usuario ' +
         'WHERE ' +
         'u.co_usuario = ? ' +
-        'AND f.data_emissao BETWEEN ? AND ?';
+        'AND f.data_emissao >= ? AND f.data_emissao < ?';
 
     const sqlTotal = 'SELECT ' +
         'IFNULL( SUM( f.valor - f.valor * ( f.total_imp_inc / 100 ) ), 0 ) AS total ' +
@@ -120,7 +130,7 @@ module.exports.getPizzaData = async (usuarios, inicio, fin) => {
         'INNER JOIN cao_os o ON f.co_os = o.co_os ' +
         'WHERE ' +
         'o.co_usuario IN (?) ' +
-        'AND f.data_emissao BETWEEN ? AND ?';
+        'AND f.data_emissao >= ? AND f.data_emissao < ?';
 
     let result = [];
 
@@ -144,3 +154,28 @@ module.exports.getPizzaData = async (usuarios, inicio, fin) => {
 
     return result;
 };
+
+function getRangos(inicio, fin) {
+    let result = [];
+
+    if (inicio.getFullYear() === fin.getFullYear() && inicio.getMonth() === fin.getMonth()) {
+        result.push({inicio, fin});
+        return result;
+    }
+
+    while (inicio.getTime() < fin.getTime()) {
+        let temp = null;
+
+        if (inicio.getMonth() === 11) {
+            temp = new Date(inicio.getFullYear() + 1, 0, 1);
+        } else {
+            temp = new Date(inicio.getFullYear(), inicio.getMonth() + 1, 1);
+        }
+
+        result.push({inicio, fin:temp});
+
+        inicio = temp;
+    }
+
+    return result;
+}

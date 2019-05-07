@@ -21,14 +21,8 @@ router.post('/informe', async function (req, res, next) {
 
     let result = [];
 
-    let inicioDate = new Date(inicio + '-01');
-    let finDate = new Date(fin + '-01');
-
-    inicioDate = new Date(inicioDate.getFullYear(), inicioDate.getMonth() + 1,1);
-    finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1,1);
-
     try {
-        result = await db.getInforme(usuarios, inicioDate, finDate);
+        result = await db.getInforme(usuarios, inicio, fin);
         res.json(result);
     } catch (e) {
         res.status(500);
@@ -43,11 +37,19 @@ router.post('/grafico', async function (req, res, next) {
 
     let result = [];
 
+    // se convierten las fechas a Date
     let inicioDate = new Date(inicio + '-01');
     let finDate = new Date(fin + '-01');
 
-    inicioDate = new Date(inicioDate.getFullYear(), inicioDate.getMonth() + 1,1)
-    finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1,1)
+    inicioDate = new Date(inicioDate.getFullYear(), inicioDate.getMonth() + 1, 1);
+    finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1, 1);
+
+    // se establece la fecha de fin
+    if (finDate.getMonth() === 11) {
+        finDate = new Date(finDate.getFullYear() + 1, 0, 1);
+    } else {
+        finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1, 1);
+    }
 
     try {
         result = await db.getGraficoData(usuarios, inicioDate, finDate);
@@ -65,11 +67,19 @@ router.post('/pizza', async function (req, res, next) {
 
     let result = [];
 
+    // se convierten las fechas a Date
     let inicioDate = new Date(inicio + '-01');
     let finDate = new Date(fin + '-01');
 
-    inicioDate = new Date(inicioDate.getFullYear(), inicioDate.getMonth() + 1,1)
-    finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1,1)
+    inicioDate = new Date(inicioDate.getFullYear(), inicioDate.getMonth() + 1, 1);
+    finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1, 1);
+
+    // se establece la fecha de fin
+    if (finDate.getMonth() === 11) {
+        finDate = new Date(finDate.getFullYear() + 1, 0, 1);
+    } else {
+        finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1, 1);
+    }
 
     try {
         result = await db.getPizzaData(usuarios, inicioDate, finDate);

@@ -50,13 +50,13 @@ module.exports.getInforme = async (usuarios, inicio, fin) => {
             type: sequelize.QueryTypes.SELECT
         });
 
-        if (rowsCosto.length === 1){
+        if (rowsCosto.length === 1) {
             costo = rowsCosto[0].costo;
         }
 
         // se busca el informe para cada rango de fecha
         for (const rango of rangos) {
-            const fecha = rango.inicio.getFullYear() + '-' + String(rango.inicio.getMonth() + 1).padStart(2,'0');
+            const fecha = rango.inicio.getFullYear() + '-' + String(rango.inicio.getMonth() + 1).padStart(2, '0');
             const rows = await sequelize.query(sql, {
                 replacements: [usuario, rango.inicio, rango.fin],
                 type: sequelize.QueryTypes.SELECT
@@ -185,23 +185,39 @@ module.exports.getPizzaData = async (usuarios, inicio, fin) => {
 function getRangos(inicio, fin) {
     let result = [];
 
-    if (inicio.getFullYear() === fin.getFullYear() && inicio.getMonth() === fin.getMonth()) {
-        result.push({inicio, fin});
+    // se convierten las fechas a Date
+    let inicioDate = new Date(inicio + '-01');
+    let finDate = new Date(fin + '-01');
+
+    inicioDate = new Date(inicioDate.getFullYear(), inicioDate.getMonth() + 1, 1);
+    finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1, 1);
+
+    // se establece la fecha de fin
+    if (finDate.getMonth() === 11) {
+        finDate = new Date(finDate.getFullYear() + 1, 0, 1);
+    } else {
+        finDate = new Date(finDate.getFullYear(), finDate.getMonth() + 1, 1);
+    }
+
+    // se comprueba si el mes y anno de inicio y fin son los mismos
+    if (inicioDate.getFullYear() === finDate.getFullYear() && inicioDate.getMonth() === finDate.getMonth()) {
+        result.push({inicio: inicioDate, fin: finDate});
         return result;
     }
 
-    while (inicio.getTime() < fin.getTime()) {
+    // se obtienen los rangos de fechas
+    while (inicioDate.getTime() < finDate.getTime()) {
         let temp = null;
 
-        if (inicio.getMonth() === 11) {
-            temp = new Date(inicio.getFullYear() + 1, 0, 1);
+        if (inicioDate.getMonth() === 11) {
+            temp = new Date(inicioDate.getFullYear() + 1, 0, 1);
         } else {
-            temp = new Date(inicio.getFullYear(), inicio.getMonth() + 1, 1);
+            temp = new Date(inicioDate.getFullYear(), inicioDate.getMonth() + 1, 1);
         }
 
-        result.push({inicio, fin: temp});
+        result.push({inicio: inicioDate, fin: temp});
 
-        inicio = temp;
+        inicioDate = temp;
     }
 
     return result;

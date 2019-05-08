@@ -174,7 +174,7 @@ module.exports.getPizzaData = async (usuarios, inicio, fin) => {
                 type: sequelize.QueryTypes.SELECT
             });
 
-            const porciento = (rows[0].ganancia * 100) / total[0].total;
+            const porciento = total[0].total !== 0 ? (rows[0].ganancia * 100) / total[0].total : 0;
             result.push({nombre: name[0].nombre, porciento: porciento});
         }
     }

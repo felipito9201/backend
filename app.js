@@ -4,6 +4,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
+const fallback = require('express-history-api-fallback')
 
 const apiRouter = require('./routes/api');
 
@@ -18,6 +19,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api', apiRouter);
+
+app.use(fallback('index.html', { root: path.join(__dirname, 'public') }));
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
